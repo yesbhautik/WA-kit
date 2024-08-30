@@ -22,4 +22,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 
+import userRoute from "./routes/user.routes";
+
+// User Route
+app.use("/api/users", userRoute);
+
 export { app };
