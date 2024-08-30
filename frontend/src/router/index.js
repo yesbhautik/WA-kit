@@ -3,6 +3,7 @@ import LoginPage from "../pages/LoginPage.vue"
 import SetupProfilePage from "../pages/SetupProfilePage.vue";
 import SetupApiPage from "../pages/SetupApiPage.vue";
 import Home from "../pages/Home.vue";
+import VerifyEmail from "../pages/VerifyEmail.vue";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,11 @@ const router = createRouter({
             path: "/",
             name: "Home",
             component: Home
+        },
+        {
+            path: "/verify-email/:token",
+            name: "Verify Email",
+            component: VerifyEmail
         },
     ]
 })

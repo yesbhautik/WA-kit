@@ -52,7 +52,7 @@ const register = asyncHandler(async (req: Request, res: Response) => {
   const { data, error } = await sendVerificationEmail({
     username,
     email,
-    token,
+    token: hashedToken,
   });
 
   console.log({ data });
@@ -80,4 +80,41 @@ const register = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-export { register };
+const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.body;
+  const currentTime = new Date(Date.now());
+
+  console.log("TOKEN >>", token);
+  console.log("currentTime >>", currentTime);
+
+  const userData = await User.findOne({ emailVerifyToken: token });
+
+  if (!userData) {
+    return res.status(400).json(new ApiResponse(400, [], "Invalid token"));
+  }
+
+  if (userData.emailVerifyTokenExpiry > currentTime) {
+    const updatedData = await User.findOneAndUpdate(
+      { emailVerifyToken: token },
+      {
+        $set: {
+          emailVerifyToken: null,
+          emailVerifyTokenExpiry: null,
+          isEmailVerified: true,
+        },
+      },
+      { new: true }
+    );
+
+    console.log({ updatedData });
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], "Email verified successfully!"));
+  } else {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, [], "Token expired!, please signup again!"));
+  }
+});
+
+export { register, verifyEmail };
