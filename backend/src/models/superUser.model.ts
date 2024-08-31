@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-export interface IUser extends Document {
+export interface ISuperUser extends Document {
   username: string;
   email: string;
   password: string;
@@ -11,7 +11,7 @@ export interface IUser extends Document {
   emailVerifyTokenExpiry: Date | null;
 }
 
-const userSchema: Schema<IUser> = new Schema(
+const superUserSchema: Schema<ISuperUser> = new Schema(
   {
     username: { type: String, required: true, unique: true },
     email: {
@@ -27,18 +27,18 @@ const userSchema: Schema<IUser> = new Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
+superUserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-userSchema.methods.isPasswordCorrect = async function (password: string) {
+superUserSchema.methods.isPasswordCorrect = async function (password: string) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.methods.generateAccessToken = function () {
+superUserSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
@@ -52,4 +52,7 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
-export const User = mongoose.model<IUser>("User", userSchema);
+export const SuperUser = mongoose.model<ISuperUser>(
+  "SuperUser",
+  superUserSchema
+);

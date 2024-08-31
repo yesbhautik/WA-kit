@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { IUser, User } from "../models/user.model";
+import { ISuperUser, SuperUser } from "../models/superUser.model";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/apiError";
+// import { ApiError } from "../utils/apiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -16,7 +16,7 @@ const register = asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json(new ApiResponse(400, [], "Invalid parameter"));
   }
 
-  const userExist: IUser | null = await User.findOne({ email });
+  const userExist: ISuperUser | null = await SuperUser.findOne({ email });
   const token = crypto.randomBytes(32).toString("hex");
   const hashedToken = bcrypt.hashSync(token, 9);
 
@@ -37,7 +37,7 @@ const register = asyncHandler(async (req: Request, res: Response) => {
     const expiryDate = new Date();
     expiryDate.setHours(expiryDate.getHours() + 1);
 
-    const newUser = new User({
+    const newUser = new SuperUser({
       username,
       password,
       email,
@@ -87,14 +87,14 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   console.log("TOKEN >>", token);
   console.log("currentTime >>", currentTime);
 
-  const userData = await User.findOne({ emailVerifyToken: token });
+  const userData = await SuperUser.findOne({ emailVerifyToken: token });
 
   if (!userData) {
     return res.status(400).json(new ApiResponse(400, [], "Invalid token"));
   }
 
   if (userData.emailVerifyTokenExpiry > currentTime) {
-    const updatedData = await User.findOneAndUpdate(
+    const updatedData = await SuperUser.findOneAndUpdate(
       { emailVerifyToken: token },
       {
         $set: {
