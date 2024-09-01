@@ -4,6 +4,7 @@ import SetupProfilePage from "../pages/SetupProfilePage.vue";
 import SetupApiPage from "../pages/SetupApiPage.vue";
 import Home from "../pages/Home.vue";
 import VerifyEmail from "../pages/VerifyEmail.vue";
+import SignUpPage from "../pages/SignUp.vue";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,6 +13,11 @@ const router = createRouter({
             path: "/login",
             name: "Login",
             component: LoginPage
+        }, 
+        {
+            path: "/signup",
+            name: "Signup",
+            component: SignUpPage
         }, 
         {
             path: "/setup-profile",
