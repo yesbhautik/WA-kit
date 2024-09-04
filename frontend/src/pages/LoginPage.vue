@@ -1,6 +1,11 @@
 <script setup>
 import { reactive } from "vue";
 import { supabase } from "../lib/supabase";
+import { useToast } from "vue-toast-notification";
+import "vue-toast-notification/dist/theme-sugar.css";
+import router from "../router";
+
+const $toast = useToast();
 
 const formData = reactive({
   email: "",
@@ -21,14 +26,20 @@ const handleSubmit = async () => {
 
     if (error) {
       console.log("Error >>", error);
-      console.log("Error >>", error?.message);
+      $toast.error(error.message, {
+        position: "top-right",
+      });
       return;
     }
     console.log("DATA >>>", data);
+    if (data) {
+      router.push({ name: "Setup API" });
+    }
   } catch (error) {
     console.log("ERROR >>", error);
-
-    alert("Something went wrong!");
+    $toast.error("Something went wrong!", {
+      position: "top-right",
+    });
   }
 };
 </script>
