@@ -33,7 +33,7 @@ const handleSubmit = async () => {
     }
     console.log("DATA >>>", data);
     if (data) {
-      router.push({ name: "Setup API" });
+      router.push({ name: "Home" });
     }
   } catch (error) {
     console.log("ERROR >>", error);
