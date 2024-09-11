@@ -1,8 +1,15 @@
 <script setup>
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import Modal from "./Modal.vue";
+import { useToast } from "vue-toast-notification";
+import { supabase } from "../lib/supabase";
+import router from "../router";
 
+const $toast = useToast();
 const isModalVisible = ref(false);
+const formData = reactive({
+  number: "",
+});
 
 const openModal = () => {
   isModalVisible.value = true;
@@ -10,6 +17,62 @@ const openModal = () => {
 
 const closeModal = () => {
   isModalVisible.value = false;
+};
+
+const submitBtn = async () => {
+  try {
+    if (!formData.number) {
+      $toast.error("Mobile number is required!", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    const { data } = await supabase.auth.getSession();
+
+    if (data && data.session) {
+      let { data: users, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("contact", formData.number);
+
+      console.log({ users });
+
+      if (users.length > 0) {
+        let { data: matchUser, error } = await supabase.auth.admin.getUserById(
+          "eb5a5fc8-5580-450c-8312-2bdbd9e7a962"
+        );
+        console.log({ matchUser });
+
+        console.log({ error });
+      }
+      //   const { data: insertData, error } = await supabase
+      //     .from("users")
+      //     .insert([{ contact: formData.number, createdBy: data.session.user.id }])
+      //     .select();
+
+      //   if (error) {
+      //     $toast.error(error.message, {
+      //       position: "top-right",
+      //     });
+      //     return;
+      //   }
+
+      //   console.log({ insertData });
+      //   if (insertData) {
+      //     $toast.error("Number add successfully!", {
+      //       position: "top-right",
+      //     });
+      //   }
+    } else {
+      router.push("/login");
+    }
+  } catch (error) {
+    $toast.error("Something went wrong!", {
+      position: "top-right",
+    });
+    return;
+  }
 };
 </script>
 
@@ -28,6 +91,7 @@ const closeModal = () => {
         v-if="isModalVisible"
         :show="isModalVisible"
         @close="closeModal"
+        @submit="submitBtn"
         title="My Modal"
       >
         <div>
@@ -37,6 +101,7 @@ const closeModal = () => {
           <input
             type="number"
             name="number"
+            v-model="formData.number"
             class="border text-sm rounded-lg outline-none focus:ring-blue-500 focus:ring-2 block w-full p-2.5 bg-gray-600 border-gray-500 placeholder-gray-400 text-white"
             placeholder="Enter new number"
             required

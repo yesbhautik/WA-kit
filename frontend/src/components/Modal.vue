@@ -22,6 +22,12 @@
       <!-- Modal Footer -->
       <div class="flex justify-end mt-4">
         <button
+          @click="submitBtn"
+          class="mr-3 text-white focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-blue-600 hover:bg-blue-700 focus:ring-blue-800"
+        >
+          Submit
+        </button>
+        <button
           @click="closeModal"
           class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-700"
         >
@@ -46,14 +52,19 @@ export default defineComponent({
       default: "Modal Title",
     },
   },
-  emits: ["close"],
+  emits: ["close", "submit"],
   setup(props, { emit }) {
     const closeModal = () => {
       emit("close");
     };
 
+    const submitBtn = () => {
+      emit("submit");
+    };
+
     return {
       closeModal,
+      submitBtn,
     };
   },
 });
