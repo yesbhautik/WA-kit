@@ -17,6 +17,7 @@ const openModal = () => {
 
 const closeModal = () => {
   isModalVisible.value = false;
+  formData.number = "";
 };
 
 const submitBtn = async () => {
@@ -34,40 +35,43 @@ const submitBtn = async () => {
       let { data: users, error } = await supabase
         .from("users")
         .select("*")
-        .eq("contact", formData.number);
+        .eq("contact", parseInt(formData.number));
 
-      console.log({ users });
-
-      if (users.length > 0) {
-        let { data: matchUser, error } = await supabase.auth.admin.getUserById(
-          "eb5a5fc8-5580-450c-8312-2bdbd9e7a962"
-        );
-        console.log({ matchUser });
-
-        console.log({ error });
+      if (error) {
+        console.log("Get Number Error >>", error);
+        return;
       }
-      //   const { data: insertData, error } = await supabase
-      //     .from("users")
-      //     .insert([{ contact: formData.number, createdBy: data.session.user.id }])
-      //     .select();
 
-      //   if (error) {
-      //     $toast.error(error.message, {
-      //       position: "top-right",
-      //     });
-      //     return;
-      //   }
+      if (users && users.length > 0) {
+        $toast.error("Number is already exist!", {
+          position: "top-right",
+        });
+        return;
+      }
+      const { data: insertData, error: insertDataError } = await supabase
+        .from("users")
+        .insert([{ contact: formData.number, createdBy: data.session.user.id }])
+        .select();
 
-      //   console.log({ insertData });
-      //   if (insertData) {
-      //     $toast.error("Number add successfully!", {
-      //       position: "top-right",
-      //     });
-      //   }
+      if (insertDataError) {
+        $toast.error(insertDataError.message, {
+          position: "top-right",
+        });
+        return;
+      }
+
+      if (insertData) {
+        closeModal();
+        $toast.success("Number add successfully!", {
+          position: "top-right",
+        });
+      }
     } else {
       router.push("/login");
     }
   } catch (error) {
+    console.log("Error >>", error);
+
     $toast.error("Something went wrong!", {
       position: "top-right",
     });

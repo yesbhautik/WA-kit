@@ -75,6 +75,7 @@ const handleSubmit = async () => {
         data: {
           name: formData.name,
         },
+        emailRedirectTo: "http://localhost:5173/setup-api",
       },
     });
 

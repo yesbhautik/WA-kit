@@ -58,14 +58,15 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     const { data } = await supabase.auth.getSession();
 
-    const { data: insertData, error } = await supabase.from("api_key").insert([
-      {
+    const { data: insertData, error } = await supabase
+      .from("api_key")
+      .insert({
         gemini_api: formData.gemini_api,
         openai_api: formData.openai_api,
         cloudflare_api: formData.cloudflare_api,
         createdBy: data.session.user.id,
-      },
-    ]);
+      })
+      .select();
 
     if (error) {
       $toast.error(error.message, {
@@ -106,7 +107,7 @@ const fetchData = async () => {
       return;
     }
 
-    if (userApi) {
+    if (userApi.length > 0) {
       formData.cloudflare_api = userApi[0].cloudflare_api;
       formData.gemini_api = userApi[0].gemini_api;
       formData.openai_api = userApi[0].openai_api;

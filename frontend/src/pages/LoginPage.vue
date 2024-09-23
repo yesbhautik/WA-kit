@@ -31,12 +31,11 @@ const handleSubmit = async () => {
       });
       return;
     }
-    console.log("DATA >>>", data);
+
     if (data) {
       router.push({ name: "Home" });
     }
   } catch (error) {
-    console.log("ERROR >>", error);
     $toast.error("Something went wrong!", {
       position: "top-right",
     });
