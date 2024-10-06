@@ -34,7 +34,12 @@ const submitBtn = async () => {
     if (data && data.session) {
       let { data: users, error } = await supabase
         .from("users")
-        .select("*")
+        .select(
+          `
+          id,
+          createdBy
+        `
+        )
         .eq("contact", parseInt(formData.number));
 
       if (error) {
