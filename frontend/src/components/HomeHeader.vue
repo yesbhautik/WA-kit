@@ -101,7 +101,7 @@ const submitBtn = async () => {
         :show="isModalVisible"
         @close="closeModal"
         @submit="submitBtn"
-        title="My Modal"
+        title="Add Contact"
       >
         <div>
           <label for="number" class="block mb-2 text-sm font-medium text-white"
