@@ -22,7 +22,15 @@
       <!-- Modal Footer -->
       <div class="flex justify-end mt-4">
         <button
+          v-if="isPairingCode"
+          @click="copyCode"
+          class="mr-3 text-white focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-green-600 hover:bg-green-700 focus:ring-green-800"
+        >
+          Copy Code
+        </button>
+        <button
           @click="submitBtn"
+          v-else="isPairingCode"
           class="mr-3 text-white focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-blue-600 hover:bg-blue-700 focus:ring-blue-800"
         >
           Submit
@@ -39,7 +47,7 @@
 </template>
 
 <script>
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 
 export default defineComponent({
   props: {
@@ -52,8 +60,10 @@ export default defineComponent({
       default: "Modal Title",
     },
   },
-  emits: ["close", "submit"],
+  emits: ["close", "submit", "copyCode"],
   setup(props, { emit }) {
+    const isPairingCode = computed(() => !props.title);
+
     const closeModal = () => {
       emit("close");
     };
@@ -62,9 +72,15 @@ export default defineComponent({
       emit("submit");
     };
 
+    const copyCode = () => {
+      emit("copyCode");
+    };
+
     return {
       closeModal,
       submitBtn,
+      copyCode,
+      isPairingCode,
     };
   },
 });

@@ -15,10 +15,21 @@ import { ApiResponse } from "../utils/ApiResponse";
 
 const logger = pino({ level: "silent" });
 const pastebin = new PastebinAPI("EMWTMkQAVfJa9kM-MRUrxd5Oku1U7pgL");
-const botInstances = {};
+const botInstances = [];
 
-async function createBot(phoneNumber) {
+async function deleteSession(phoneNumber) {
+  const sessionDir = `./sessions/${phoneNumber}`;
+  if (fs.existsSync(sessionDir)) {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+    console.log(`${phoneNumber} Deleted from Sessions`);
+  }
+  await Bot.findOneAndDelete({ phoneNumber });
+  console.log(`Deleted ${phoneNumber} From DB`);
+}
+
+async function createBot(phoneNumber: string) {
   try {
+    console.log("BOT INSTANCES >>>", botInstances);
     const sessionDir = `./sessions/${phoneNumber}`;
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
@@ -39,15 +50,23 @@ async function createBot(phoneNumber) {
 
     Matrix.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect } = update;
+
+      console.log("============================================");
+      console.log("Connection >>", connection, lastDisconnect);
+      console.log("============================================");
+
       if (connection === "close") {
         const shouldReconnect =
           (lastDisconnect.error as Boom)?.output?.statusCode !==
           DisconnectReason.loggedOut;
+
+        console.log("shouldReconnect >>", shouldReconnect);
+
         if (shouldReconnect) {
           setTimeout(() => createBot(phoneNumber), 5000);
         } else {
           console.log(`${phoneNumber} Logged out.`);
-          // await deleteSession(phoneNumber);
+          await deleteSession(phoneNumber);
         }
       } else if (connection === "open") {
         console.log(`Connected to WhatsApp: ${phoneNumber}`);
@@ -89,7 +108,7 @@ async function createBot(phoneNumber) {
     return Matrix;
   } catch (error) {
     console.error("Error creating bot:", error);
-    // await deleteSession(phoneNumber);
+    await deleteSession(phoneNumber);
   }
 }
 
@@ -107,6 +126,8 @@ const pairingRoute = asyncHandler(async (req: Request, res: Response) => {
 
     console.log(`Creating bot for phone number: ${phoneNumber}`);
     const bot = await createBot(phoneNumber);
+
+    console.log("BOT >>", bot);
 
     if (!bot) {
       throw new ApiError(500, "Bot creation failed");
@@ -127,12 +148,14 @@ const pairingRoute = asyncHandler(async (req: Request, res: Response) => {
           );
       } catch (error) {
         console.error("Error generating pairing code:", error);
+        await deleteSession(phoneNumber);
         return res
           .status(500)
           .json(new ApiResponse(500, [], "Error generating pairing code"));
       }
     }, 3000);
   } catch (error) {
+    console.log("Error >>", error);
     return res
       .status(500)
       .json(new ApiError(500, "Error generating pairing code"));

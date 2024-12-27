@@ -4,8 +4,8 @@
   "main": "index.ts",
   "scripts": {
     "build": "tsc",
-    "dev1": "tsc && nodemon dist/index.js",
-    "dev": "ts-node src/index.ts"
+    "dev": "tsc && nodemon dist/index.js",
+    "server": "ts-node src/index.ts"
   },
   "keywords": [],
   "author": "",
