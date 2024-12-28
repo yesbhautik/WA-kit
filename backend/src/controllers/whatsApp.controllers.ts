@@ -15,7 +15,6 @@ import { ApiResponse } from "../utils/ApiResponse";
 
 const logger = pino({ level: "silent" });
 const pastebin = new PastebinAPI("EMWTMkQAVfJa9kM-MRUrxd5Oku1U7pgL");
-const botInstances = [];
 
 async function deleteSession(phoneNumber) {
   const sessionDir = `./sessions/${phoneNumber}`;
@@ -27,16 +26,14 @@ async function deleteSession(phoneNumber) {
   console.log(`Deleted ${phoneNumber} From DB`);
 }
 
-async function createBot(phoneNumber: string) {
+async function createBot(phoneNumber: string, deviceId: string) {
   try {
-    console.log("BOT INSTANCES >>>", botInstances);
-    const sessionDir = `./sessions/${phoneNumber}`;
+    const sessionDir = `./sessions/${phoneNumber}/${deviceId}`;
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
     const msgRetryCounterCache = new NodeCache();
 
     const Matrix = makeWASocket({
-      // logger: logger,
       printQRInTerminal: false,
       browser: ["Mac OS", "chrome", "121.0.6167.159"],
       auth: state,
@@ -46,43 +43,40 @@ async function createBot(phoneNumber: string) {
       msgRetryCounterCache,
     });
 
-    botInstances[phoneNumber] = Matrix;
-
     Matrix.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect } = update;
-
-      console.log("============================================");
-      console.log("Connection >>", connection, lastDisconnect);
-      console.log("============================================");
 
       if (connection === "close") {
         const shouldReconnect =
           (lastDisconnect.error as Boom)?.output?.statusCode !==
           DisconnectReason.loggedOut;
 
-        console.log("shouldReconnect >>", shouldReconnect);
-
         if (shouldReconnect) {
-          setTimeout(() => createBot(phoneNumber), 5000);
+          setTimeout(() => createBot(phoneNumber, deviceId), 5000);
         } else {
-          console.log(`${phoneNumber} Logged out.`);
+          console.log(
+            `== Phone number ${phoneNumber}, Device ${deviceId} logged out.`
+          );
           await deleteSession(phoneNumber);
         }
       } else if (connection === "open") {
-        console.log(`Connected to WhatsApp: ${phoneNumber}`);
+        console.log(`Device ${phoneNumber} connected to WhatsApp.`);
       }
     });
 
     Matrix.ev.on("creds.update", saveCreds);
 
+    // Handle incoming messages specifically for the current device
     Matrix.ev.on("messages.upsert", async (m) => {
-      console.log(
-        "=========================================SEND MESSAGE >>",
-        m.messages[0].message
-      );
-
-      if (m.messages[0].message.conversation.includes("ping")) {
-        console.log("replying to", m.messages[0].key.remoteJid);
+      if (
+        m.messages[0].message &&
+        ((m.messages[0].message.conversation &&
+          m.messages[0].message.conversation.toLowerCase().includes("ping")) ||
+          (m.messages[0].message.extendedTextMessage &&
+            m.messages[0].message.extendedTextMessage.text
+              .toLowerCase()
+              .includes("ping")))
+      ) {
         await Matrix.sendMessage(m.messages[0].key.remoteJid!, {
           text: "Pong!",
         });
@@ -101,7 +95,7 @@ async function createBot(phoneNumber: string) {
           "N"
         );
         const sessionId = pasteUrl.split("/").pop();
-        await Bot.create({ phoneNumber, sessionId });
+        await Bot.create({ phoneNumber, sessionId, botInstance: Matrix });
         console.log(`New user created for phone number: ${phoneNumber}`);
       }
     }
@@ -124,10 +118,12 @@ const pairingRoute = asyncHandler(async (req: Request, res: Response) => {
 
     phoneNumber = phoneNumber.replace(/[^0-9]/g, "");
 
-    console.log(`Creating bot for phone number: ${phoneNumber}`);
-    const bot = await createBot(phoneNumber);
+    let deviceId = new Date().getTime().toString();
 
-    console.log("BOT >>", bot);
+    console.log(
+      `Creating bot for phone number: ${phoneNumber}, Device ID: ${deviceId}`
+    );
+    const bot = await createBot(phoneNumber, deviceId);
 
     if (!bot) {
       throw new ApiError(500, "Bot creation failed");

@@ -29,8 +29,14 @@
           Copy Code
         </button>
         <button
+          @click="updateBtn"
+          v-else-if="updateBtnShow"
+          class="mr-3 text-white focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-blue-600 hover:bg-blue-700 focus:ring-blue-800"
+        >
+          Update</button
+        ><button
           @click="submitBtn"
-          v-else="isPairingCode"
+          v-else
           class="mr-3 text-white focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-blue-600 hover:bg-blue-700 focus:ring-blue-800"
         >
           Submit
@@ -60,9 +66,11 @@ export default defineComponent({
       default: "Modal Title",
     },
   },
-  emits: ["close", "submit", "copyCode"],
+  emits: ["close", "submit", "copyCode", "updateBtn"],
   setup(props, { emit }) {
     const isPairingCode = computed(() => !props.title);
+    // If Modal title match then show update button
+    const updateBtnShow = computed(() => props.title === "Update contact");
 
     const closeModal = () => {
       emit("close");
@@ -76,11 +84,17 @@ export default defineComponent({
       emit("copyCode");
     };
 
+    const updateBtn = () => {
+      emit("updateBtn");
+    };
+
     return {
       closeModal,
       submitBtn,
       copyCode,
+      updateBtn,
       isPairingCode,
+      updateBtnShow,
     };
   },
 });
