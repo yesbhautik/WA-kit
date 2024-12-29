@@ -80,6 +80,7 @@ const submitBtn = async () => {
         },
         body: JSON.stringify({
           phoneNumber: formData.countryCode + formData.number,
+          isUpdate: false,
         }),
         credentials: "include",
       });

@@ -11,7 +11,7 @@ const botSchema = new Schema(
       type: String,
       required: true,
     },
-    botInstance: { type: Object, required: true },
+    // botInstance: { type: Object, required: true },
   },
   { timestamps: true }
 );

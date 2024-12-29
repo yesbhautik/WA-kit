@@ -84,8 +84,10 @@ async function createBot(phoneNumber: string, deviceId: string) {
     });
 
     const existingUser = await Bot.findOne({ phoneNumber });
+
     if (!existingUser) {
       const credsPath = `${sessionDir}/creds.json`;
+
       if (fs.existsSync(credsPath)) {
         const pasteUrl = await pastebin.createPasteFromFile(
           credsPath,
@@ -95,7 +97,9 @@ async function createBot(phoneNumber: string, deviceId: string) {
           "N"
         );
         const sessionId = pasteUrl.split("/").pop();
-        await Bot.create({ phoneNumber, sessionId, botInstance: Matrix });
+        await Bot.create({ phoneNumber, sessionId });
+        const fileContent = fs.readFileSync(credsPath, "utf8");
+        console.log("Uploading file content to Pastebin...", fileContent);
         console.log(`New user created for phone number: ${phoneNumber}`);
       }
     }

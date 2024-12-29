@@ -13,6 +13,7 @@ const formData = reactive({
   id: "",
   countryCode: "91",
   pairingCode: "",
+  oldNumber: "",
 });
 const isModalVisible = ref(false);
 const isPairingModal = ref(false);
@@ -43,6 +44,7 @@ const openModal = async (id) => {
       formData.number = data[0].contact.toString().slice(2);
       formData.countryCode = data[0].contact.toString().slice(0, 2);
       formData.id = data[0].id;
+      formData.oldNumber = data[0].contact;
       isModalVisible.value = true;
     }
   } catch (error) {
@@ -133,14 +135,18 @@ const updateBtn = async () => {
         return;
       }
 
+      const sendData = {
+        phoneNumber: formData.countryCode + formData.number,
+        oldNumber: formData.oldNumber,
+        isUpdate: true,
+      };
+
       const result = await fetch("/api/whatsapp/pairing-code", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          phoneNumber: formData.countryCode + formData.number,
-        }),
+        body: JSON.stringify(sendData),
         credentials: "include",
       });
 
