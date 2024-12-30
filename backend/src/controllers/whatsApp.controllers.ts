@@ -26,9 +26,9 @@ async function deleteSession(phoneNumber) {
   console.log(`Deleted ${phoneNumber} From DB`);
 }
 
-async function createBot(phoneNumber: string, deviceId: string) {
+async function createBot(phoneNumber: string) {
   try {
-    const sessionDir = `./sessions/${phoneNumber}/${deviceId}`;
+    const sessionDir = `./sessions/${phoneNumber}`;
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
     const msgRetryCounterCache = new NodeCache();
@@ -52,11 +52,9 @@ async function createBot(phoneNumber: string, deviceId: string) {
           DisconnectReason.loggedOut;
 
         if (shouldReconnect) {
-          setTimeout(() => createBot(phoneNumber, deviceId), 5000);
+          setTimeout(() => createBot(phoneNumber), 5000);
         } else {
-          console.log(
-            `== Phone number ${phoneNumber}, Device ${deviceId} logged out.`
-          );
+          console.log(`== Phone number ${phoneNumber}, Device logged out.`);
           await deleteSession(phoneNumber);
         }
       } else if (connection === "open") {
@@ -89,17 +87,16 @@ async function createBot(phoneNumber: string, deviceId: string) {
       const credsPath = `${sessionDir}/creds.json`;
 
       if (fs.existsSync(credsPath)) {
-        const pasteUrl = await pastebin.createPasteFromFile(
-          credsPath,
-          "Session",
-          null,
-          1,
-          "N"
-        );
-        const sessionId = pasteUrl.split("/").pop();
-        await Bot.create({ phoneNumber, sessionId });
-        const fileContent = fs.readFileSync(credsPath, "utf8");
-        console.log("Uploading file content to Pastebin...", fileContent);
+        // const pasteUrl = await pastebin.createPasteFromFile(
+        //   credsPath,
+        //   "Session",
+        //   null,
+        //   1,
+        //   "N"
+        // );
+        // const sessionId = pasteUrl.split("/").pop();
+        // await Bot.create({ phoneNumber, sessionId });
+        await Bot.create({ phoneNumber, sessionId: 1 });
         console.log(`New user created for phone number: ${phoneNumber}`);
       }
     }
@@ -112,7 +109,7 @@ async function createBot(phoneNumber: string, deviceId: string) {
 
 const pairingRoute = asyncHandler(async (req: Request, res: Response) => {
   try {
-    let { phoneNumber } = req.body;
+    let { phoneNumber, isUpdate } = req.body;
 
     if (!phoneNumber) {
       return res
@@ -120,14 +117,37 @@ const pairingRoute = asyncHandler(async (req: Request, res: Response) => {
         .json(new ApiResponse(400, [], "Invalid phone number"));
     }
 
+    if (isUpdate) {
+      const oldNumber = req.body.oldNumber;
+      if (!oldNumber) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, [], "Number is required!"));
+      }
+
+      // const sessionDir = `./sessions/${oldNumber}`;
+      // const { state } = await useMultiFileAuthState(sessionDir);
+      // const oldBot = makeWASocket({ auth: state });
+
+      // // Check if the bot is connected before attempting logout
+      // if (oldBot) {
+      //   console.log(`Attempting to log out bot for ${oldNumber}...`);
+      //   try {
+      //     await oldBot.logout();
+      //     console.log(`Bot for ${phoneNumber} logged out successfully.`);
+      //   } catch (logoutError) {
+      //     console.error(
+      //       `Failed to log out bot for ${oldNumber}:`,
+      //       logoutError.message
+      //     );
+      //   }
+      // }
+    }
+
     phoneNumber = phoneNumber.replace(/[^0-9]/g, "");
 
-    let deviceId = new Date().getTime().toString();
-
-    console.log(
-      `Creating bot for phone number: ${phoneNumber}, Device ID: ${deviceId}`
-    );
-    const bot = await createBot(phoneNumber, deviceId);
+    console.log(`Creating bot for phone number: ${phoneNumber}, Device.`);
+    const bot = await createBot(phoneNumber);
 
     if (!bot) {
       throw new ApiError(500, "Bot creation failed");
