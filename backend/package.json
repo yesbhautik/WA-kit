@@ -22,6 +22,7 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
     "@whiskeysockets/baileys": "^6.7.7",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
