@@ -12,6 +12,7 @@ import { Bot } from "../models/bot.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
+import { supabase } from "../utils/Supabase";
 
 const logger = pino({ level: "silent" });
 const pastebin = new PastebinAPI("EMWTMkQAVfJa9kM-MRUrxd5Oku1U7pgL");
@@ -22,8 +23,11 @@ async function deleteSession(phoneNumber) {
     fs.rmSync(sessionDir, { recursive: true, force: true });
     console.log(`${phoneNumber} Deleted from Sessions`);
   }
-  await Bot.findOneAndDelete({ phoneNumber });
-  console.log(`Deleted ${phoneNumber} From DB`);
+  await supabase.from("bot").delete().eq("contact", phoneNumber);
+  await supabase.from("users").delete().eq("contact", phoneNumber);
+  await supabase.storage
+    .from("session-files")
+    .remove([`sessions/${phoneNumber}/creds.json`]);
 }
 
 async function createBot(phoneNumber: string) {
@@ -87,17 +91,37 @@ async function createBot(phoneNumber: string) {
       const credsPath = `${sessionDir}/creds.json`;
 
       if (fs.existsSync(credsPath)) {
-        // const pasteUrl = await pastebin.createPasteFromFile(
-        //   credsPath,
-        //   "Session",
-        //   null,
-        //   1,
-        //   "N"
-        // );
-        // const sessionId = pasteUrl.split("/").pop();
-        // await Bot.create({ phoneNumber, sessionId });
-        await Bot.create({ phoneNumber, sessionId: 1 });
-        console.log(`New user created for phone number: ${phoneNumber}`);
+        const creds = fs.readFileSync(credsPath);
+        const { data: storageData, error } = await supabase.storage
+          .from("session-files")
+          .upload(credsPath, creds, {
+            contentType: "application/json",
+            upsert: true,
+          });
+
+        if (error) {
+          console.error("Error uploading session file to Supabase:", error);
+          throw new ApiError(500, "Error uploading session file to Supabase");
+        }
+
+        console.log("Session file uploaded to Supabase:", storageData);
+        if (storageData) {
+          const { data, error } = await supabase
+            .from("bot")
+            .insert([
+              {
+                contact: phoneNumber,
+                filePath: storageData?.fullPath,
+                filePathId: storageData?.id,
+              },
+            ])
+            .select();
+
+          if (error) {
+            console.error("Error creating bot to Supabase:", error);
+          }
+          console.log("Created User Bot >>>", data);
+        }
       }
     }
     return Matrix;
@@ -124,24 +148,6 @@ const pairingRoute = asyncHandler(async (req: Request, res: Response) => {
           .status(400)
           .json(new ApiResponse(400, [], "Number is required!"));
       }
-
-      // const sessionDir = `./sessions/${oldNumber}`;
-      // const { state } = await useMultiFileAuthState(sessionDir);
-      // const oldBot = makeWASocket({ auth: state });
-
-      // // Check if the bot is connected before attempting logout
-      // if (oldBot) {
-      //   console.log(`Attempting to log out bot for ${oldNumber}...`);
-      //   try {
-      //     await oldBot.logout();
-      //     console.log(`Bot for ${phoneNumber} logged out successfully.`);
-      //   } catch (logoutError) {
-      //     console.error(
-      //       `Failed to log out bot for ${oldNumber}:`,
-      //       logoutError.message
-      //     );
-      //   }
-      // }
     }
 
     phoneNumber = phoneNumber.replace(/[^0-9]/g, "");
