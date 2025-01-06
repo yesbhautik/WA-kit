@@ -1,21 +1,15 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import NodeCache from "node-cache";
-import pino from "pino";
-import PastebinAPI from "pastebin-js";
 import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
-import { Bot } from "../models/bot.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { supabase } from "../utils/Supabase";
-
-const logger = pino({ level: "silent" });
-const pastebin = new PastebinAPI("EMWTMkQAVfJa9kM-MRUrxd5Oku1U7pgL");
 
 async function deleteSession(phoneNumber) {
   const sessionDir = `./sessions/${phoneNumber}`;
@@ -85,9 +79,17 @@ async function createBot(phoneNumber: string) {
       }
     });
 
-    const existingUser = await Bot.findOne({ phoneNumber });
+    const { data } = await supabase
+      .from("users")
+      .select(
+        `
+          id,
+          createdBy
+        `
+      )
+      .eq("contact", parseInt(phoneNumber));
 
-    if (!existingUser) {
+    if (data.length === 0) {
       const credsPath = `${sessionDir}/creds.json`;
 
       if (fs.existsSync(credsPath)) {
@@ -104,7 +106,6 @@ async function createBot(phoneNumber: string) {
           throw new ApiError(500, "Error uploading session file to Supabase");
         }
 
-        console.log("Session file uploaded to Supabase:", storageData);
         if (storageData) {
           const { data, error } = await supabase
             .from("bot")

@@ -23,14 +23,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 
-import superUserRoute from "./routes/superUser.routes";
 import whatsAppRoute from "./routes/whatsApp.routes";
 
 if (!fs.existsSync("./sessions")) {
   fs.mkdirSync("./sessions", { recursive: true });
 }
-// User Route
-app.use("/api/users", superUserRoute);
 
 // Whatsapp pair route
 app.use("/api/whatsapp", whatsAppRoute);
