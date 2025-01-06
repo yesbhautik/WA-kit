@@ -1,9 +1,13 @@
 import dotenv from "dotenv";
 import { app } from "./app";
+import { reloadBots } from "./controllers/whatsApp.controllers";
+
 dotenv.config({
   path: "./.env",
 });
 
 app.listen(process.env.PORT || 8000, () => {
-  console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
+  reloadBots().then(() => {
+    console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
+  });
 });

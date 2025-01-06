@@ -24,6 +24,36 @@ async function deleteSession(phoneNumber) {
     .remove([`sessions/${phoneNumber}/creds.json`]);
 }
 
+function getPhoneNumbersFromSessions() {
+  const sessionDirectories = fs
+    .readdirSync("./sessions")
+    .filter((file) => file.match(/^\d+$/));
+  return sessionDirectories;
+}
+
+async function restoreSessionFromDB(phoneNumber, filePath) {
+  try {
+    console.log(`Restoring session for phone number: ${phoneNumber}`);
+    const sessionDir = `./sessions/${phoneNumber}`;
+    if (!fs.existsSync(sessionDir)) {
+      fs.mkdirSync(sessionDir, { recursive: true });
+    }
+
+    const { data, error } = await supabase.storage
+      .from("session-files")
+      .download(filePath);
+
+    const fileData = await data.text();
+
+    if (typeof fileData === "object") {
+      fs.writeFileSync(`${sessionDir}/creds.json`, fileData);
+    }
+    await createBot(phoneNumber);
+  } catch (error) {
+    console.error("Error restoring session:", error);
+  }
+}
+
 async function createBot(phoneNumber: string) {
   try {
     const sessionDir = `./sessions/${phoneNumber}`;
@@ -80,11 +110,11 @@ async function createBot(phoneNumber: string) {
     });
 
     const { data } = await supabase
-      .from("users")
+      .from("bot")
       .select(
         `
           id,
-          createdBy
+          contact
         `
       )
       .eq("contact", parseInt(phoneNumber));
@@ -189,4 +219,23 @@ const pairingRoute = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-export { pairingRoute };
+async function reloadBots() {
+  const phoneNumbers = getPhoneNumbersFromSessions();
+
+  const { data } = await supabase.from("bot").select();
+  const phoneNumbersInDB = data.map((user) => user.contact);
+
+  for (const phoneNumber of phoneNumbers) {
+    await createBot(phoneNumber);
+  }
+
+  for (const phoneNumber of phoneNumbersInDB) {
+    if (!phoneNumbers.includes(String(phoneNumber))) {
+      const user = data.find((user) => user.contact === Number(phoneNumber));
+      if (user) {
+        await restoreSessionFromDB(phoneNumber, user.filePath.slice(14));
+      }
+    }
+  }
+}
+export { pairingRoute, reloadBots };
