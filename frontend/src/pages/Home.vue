@@ -271,14 +271,17 @@ onMounted(() => {
       <h3 class="pb-1 text-xl font-semibold">No Account add yet.</h3>
       <p>Please add account</p>
     </div>
-    <div v-else class="grid grid-cols-4 gap-4 w-4/5 m-auto">
+    <div
+      v-else
+      class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:w-4/5 m-auto"
+    >
       <div v-for="data in formData.users">
         <div
           class="text-white bg-blue-950 p-4 rounded-sm cursor-pointer flex justify-between items-center"
         >
           <span>{{ data.contact }}</span
           ><button
-            class="py-1.5 px-2 text-sm font-medium focus:outline-none rounded-lg border focus:z-10 focus:ring-1 ring-gray-700 bg-gray-800 text-gray-400 border-gray-600 hover:text-white hover:bg-gray-700"
+            class="py-1 px-1 text-xs font-medium focus:outline-none rounded-lg border focus:z-10 focus:ring-1 ring-gray-700 bg-gray-800 text-gray-400 border-gray-600 hover:text-white hover:bg-gray-700"
             @click="() => openModal(data.id)"
           >
             Update

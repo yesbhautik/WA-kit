@@ -7,7 +7,11 @@ dotenv.config({
 });
 
 app.listen(process.env.PORT || 8000, () => {
-  reloadBots().then(() => {
-    console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
-  });
+  reloadBots()
+    .then(() => {
+      console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
+    })
+    .catch((err) => {
+      console.log("Error while reloadBots >>", err);
+    });
 });

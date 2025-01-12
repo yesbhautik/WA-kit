@@ -167,6 +167,12 @@ const handleSubmit = async () => {
         >
           Sign Up
         </button>
+        <span class="text-sm block text-center text-slate-300">
+          Already have an account?
+          <RouterLink to="/login" class="underline decoration-slate-50"
+            >Signin</RouterLink
+          >
+        </span>
       </form>
 
       <form v-else @submit.prevent="verifyOTPHandler">

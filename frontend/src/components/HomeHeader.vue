@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import Modal from "./Modal.vue";
 import { useToast } from "vue-toast-notification";
 import { supabase } from "../lib/supabase";
@@ -8,6 +8,7 @@ import router from "../router";
 const $toast = useToast();
 const isModalVisible = ref(false);
 const isPairingModal = ref(false);
+const isAuthenticated = ref(false);
 const formData = reactive({
   number: "",
   countryCode: "91",
@@ -37,6 +38,11 @@ const copyPairingCode = () => {
       position: "top-right",
     });
   });
+};
+
+const checkAuth = async () => {
+  const { data: user } = await supabase.auth.getUser();
+  isAuthenticated.value = !!user;
 };
 
 const submitBtn = async () => {
@@ -132,17 +138,48 @@ const submitBtn = async () => {
     return;
   }
 };
+
+const logoutBtn = async () => {
+  try {
+    const { error } = supabase.auth.signOut();
+    if (error) {
+      $toast.error("Something went wrong!", {
+        position: "top-right",
+      });
+    }
+    router.push("/login");
+  } catch (error) {
+    $toast.error("Something went wrong!", {
+      position: "top-right",
+    });
+  }
+};
+
+onMounted(() => {
+  checkAuth();
+
+  // Listen for auth state changes
+  supabase.auth.onAuthStateChange((_event, session) => {
+    isAuthenticated.value = !!session;
+  });
+});
 </script>
 
 <template>
   <section class="mb-3 p-2 px-5 flex justify-between items-center">
     <h2 class="text-white">Connected WhatsApp Accounts</h2>
-    <div>
+    <div v-if="isAuthenticated">
       <button
         @click="() => openModal('contact')"
         class="mr-3 text-white focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-blue-600 hover:bg-blue-700"
       >
         Add Account
+      </button>
+      <button
+        @click="logoutBtn"
+        class="mr-3 text-white focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-blue-600 hover:bg-blue-700"
+      >
+        Logout
       </button>
 
       <!-- Modal for add contact -->

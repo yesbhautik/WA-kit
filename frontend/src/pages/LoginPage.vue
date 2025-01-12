@@ -82,6 +82,12 @@ const handleSubmit = async () => {
         >
           Sign in
         </button>
+        <span class="text-sm block text-center text-slate-300">
+          Don't have an account?
+          <RouterLink to="/signup" class="underline decoration-slate-50"
+            >Register</RouterLink
+          >
+        </span>
       </form>
     </div>
   </section>
