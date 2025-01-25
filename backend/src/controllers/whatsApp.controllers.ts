@@ -223,7 +223,7 @@ async function reloadBots() {
   const phoneNumbers = getPhoneNumbersFromSessions();
 
   const { data } = await supabase.from("bot").select();
-  const phoneNumbersInDB = data.map((user) => user.contact);
+  const phoneNumbersInDB = data?.map((user) => user.contact) || [];
 
   for (const phoneNumber of phoneNumbers) {
     await createBot(phoneNumber);
